@@ -178,9 +178,85 @@ for index, row in crashes.iterrows():
 
 **Retrieve data from API**
 
+Second, we finally have to retrieve the data from API. 
+So we simply get the request from API and assign in to the variable.
+Since this .json file containes other data but flight states, we need to store only "states" data.
+
 ```
 response = requests.get("https://opensky-network.org/api/states/all")
 raw_data = json.loads(response.text)
 data = raw_data['states']
 ```
 
+Now we can just iterate through this data and store everything into DB.
+
+```
+def connect(icao24, callsign, origin_country, time_position, last_contact, longitude, latitude, baro_altitude, on_ground, velocity, true_track, vertical_rate, sensors, geo_altitude, squawk, spi, position_source):
+    
+    con = psycopg2.connect(database="postgres", user="polina@opensky", password="Bigdata2019", host="opensky.postgres.database.azure.com", port="5432")
+    cursor = con.cursor()
+    query = "INSERT INTO flights_all (icao24, callsign, origin_country, time_position, last_contact, longitude, latitude, baro_altitude, on_ground, velocity, true_track, vertical_rate, sensors, geo_altitude, squawk, spi, position_source, retrieved_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, current_timestamp)"
+    cursor.execute(query, (icao24, callsign, origin_country, time_position, last_contact, longitude, latitude, baro_altitude, on_ground, velocity, true_track, vertical_rate, sensors, geo_altitude, squawk, spi, position_source))
+    con.commit()
+    
+    cursor.close()
+    con.close()
+    return
+    
+    
+def delete():
+    con = psycopg2.connect(database="postgres", user="polina@opensky", password="Bigdata2019", host="opensky.postgres.database.azure.com", port="5432")
+    cursor = con.cursor()
+    query2 = "with flights as (select callsign from states where on_ground = true) delete from states where id in (select id from states s inner join flights f on f.callsign = s.callsign) or callsign ilike ''"
+    cursor.execute(query2)
+    con.commit()
+    
+    cursor.close()
+    con.close()
+    return
+    
+def insert(data):
+    for d in range(len(data)):
+        if (data[d][2] == 'Germany' or data[d][2] == 'Ukraine' or data[d][2] == 'Moldova' or data[d][2] == 'Kazakhstan'):
+            icao24 = data[d][0]
+            callsign = data[d][1]
+            origin_country = data[d][2]
+            time_position = data[d][3]
+            last_contact = data[d][4]
+            longitude = data[d][5]
+            latitude = data[d][6]
+            baro_altitude = data[d][7]
+            on_ground = data[d][8]
+            velocity = data[d][9]
+            true_track = data[d][10]
+            vertical_rate = data[d][11]
+            sensors = data[d][12]
+            geo_altitude = data[d][13]
+            squawk = data[d][14]
+            spi = data[d][15]
+            position_source = data[d][16]
+            print(origin_country)
+        else: continue
+
+        connect(icao24, callsign, origin_country, time_position, last_contact, longitude, latitude, baro_altitude, on_ground, velocity, true_track, vertical_rate, sensors, geo_altitude, squawk, spi, position_source)
+```
+
+As you might noticed, we also created delete() function which filters the data and deletes all flights where callsign (flight number) is empty and there *on_ground = True* (which means that flight is either finished or haven't started yet). We will use it for **cron job**.
+
+# Job Scheduling
+
+Our goal was to visualize all flight in real time. We failed due to database low capasity, obviously. Nevertheless, we ran cron job for over 10 hours to get as much data as possible and demonstrate the whole concept.
+
+*Why do we need cron jobs?*
+
+This is really nice tool to schedule some jobs, for example to update DWH every 2 hours or to filter the data (as we did).
+
+We tries two different tools: **Pentaho Data Integration** and **Apache Airflow**.
+
+With the first one we already were familliar, another one is absolutely new, that's why we wanted to use Airflow instead of Pentaho.
+
+Pentaho does it really smoothly, we only had to create transformation (but basically it's one Python script with all code above) and create the job with scheduler in it. And it's done, runnign every 20 minutes.
+
+The big disadvantage of Pentaho - is that it's not possible to run it on background on directly on the server. It's local solutions, which is also fine for some cases.
+
+In the meantime, Apache Airflow may be connected to the server and run all jobs on the backgroud no matter what. Really useful tool, especialy when you have to run jobs every X hours/minutes and import data from production database to DWH, and from DWH to another DWH.
