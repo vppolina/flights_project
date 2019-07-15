@@ -1,6 +1,6 @@
 ## Retrieving and Visualizing Real-time data from API 
 HWR Berlin
-Enterprise Architechtures for Big Data
+Enterprise Architectures for Big Data
 
 Polina Voroshylova
 Ana Maria Cuciuc
@@ -8,42 +8,42 @@ Tarazali Ryskul
 
 # Project Scope
 
-Analyse and visualize real-time flights data. Observe all possible flight open source data, retrive valuable and usuful information.
+Analyze and visualize real-time flights data. Observe all possible flight open source data, retrieve valuable and useful information.
 Try out new technologies, like Azure Cloud, Apache Airflow, Hadoop Spark.
 
 # Database set up
 
-We used Azure Cloud for 4 reasons:
+We used the Azure Cloud for 4 reasons:
 1. We have a credit
-2. It's so much easier to set up PostgreSQL database on this platform
+2. It's so much easier to set up a PostgreSQL database on this platform
 3. Easy to maintain
 4. Easy to connect
 
 However, during the project we stack with several issues:
-1. It's super slow - of course in the beginning we took 1 Core and 11 GB memory, nevertheless after switching to 2 Cores and 56 GB the speed remained the same, and this is the main reason why we reduced our data
+1. It's super slow - of course, in the beginning, we took 1 Core and 11 GB memory, nevertheless, after switching to 2 Cores and 56 GB the speed remained the same, and this is the main reason why we reduced our data
 2. Not possible to upload CSV files directly (Google Cloud does)
-3. Not possible to set up PostgreSQL cron job directly usinf Basic subscription - they only provide super expensive (~ 500 EUR/month) cloud where cron jobs are supported
+3. Not possible to set up PostgreSQL cron job directly using Basic subscription - they only provide super expensive (~ 500 EUR/month) cloud where cron jobs are supported
 
-So this solution is nice for small projects with little data, but too expensive for production.
+So this solution is nice for small projects with little data but too expensive for production.
 
 # Data sources 
 
 * [**Open Sky Network**](https://opensky-network.org/apidoc/rest.html#all-state-vectors)
 
 Open source data source with real-time flights data. You can retrieve data using either REST API, Python API or Java API. 
-After some tryings, we decided to use REST API, it's easier to retrieve data and filter it right away.
+After some trying, we decided to use REST API, it's easier to retrieve data and filter it right away.
 
 * [**Airplane-Crashes-and-Fatalities**](https://opendata.socrata.com/Government/Airplane-Crashes-and-Fatalities-Since-1908/q2te-8cvq)
 
-We decided to add additional information about crashes and include it to our project. Also we deep dived into this data and analysed it with Hadoop Spark.
+We decided to add additional information about crashes and include it to our project. Also, we deep dived into this data and analyzed it with Hadoop Spark.
 
 * [**Airline Codes**](https://openflights.org/data.html)
 
-Really nice data source. It contains lots of flights data. We used only airline codes data to join crashes data and align it with real-time flights data. However, there are no real-time data and flight roads data containes a lot of redundancies.
+Really nice data source. It contains lots of flights data. We used only airline codes data to join crashes data and align it with real-time flights data. However, there are no real-time data and flight roads data contains a lot of redundancies.
 
 # Step 1 - Tables setup
 
-After database creation we have to create 3 tables: flights_all, airline_crashes, airline_codes.
+After database creation, we have to create 3 tables: flights_all, airline_crashes, airline_codes.
 We created simple SQL queries.
 
 
@@ -103,7 +103,7 @@ id serial
 # Step 2 - Data Retrieving
 
 First, we have to upload "static" datasets on our DB: airline codes and airline crashes.
-We alredy prepared .csv files, so we can just run small python code and insert the data into DB.
+We already prepared .csv files, so we can just run a small python code and insert the data into DB.
 
 **Airline Crashes**
 
@@ -136,7 +136,7 @@ for index, row in data.iterrows():
 
 **Airline Crashes**
 
-Airline crashes dataset was a bit tricky, it has many missing values and a city with a country concatinated in one column.
+Airline crashes dataset was a bit tricky, it has many missing values and a city with a country concatenated in one column.
 That's why we aggregated data a bit and inserted into DB after this.
 
 ```
@@ -178,9 +178,9 @@ for index, row in crashes.iterrows():
 
 **Retrieve data from API**
 
-Second, we finally have to retrieve the data from API. 
-So we simply get the request from API and assign in to the variable.
-Since this .json file containes other data but flight states, we need to store only "states" data.
+Second, we finally have to retrieve the data from the API. 
+So we simply get the request from API and assign into the variable.
+Since this .json file contains other data but flight states, we need to store only "states" data.
 
 ```
 response = requests.get("https://opensky-network.org/api/states/all")
@@ -241,76 +241,76 @@ def insert(data):
         connect(icao24, callsign, origin_country, time_position, last_contact, longitude, latitude, baro_altitude, on_ground, velocity, true_track, vertical_rate, sensors, geo_altitude, squawk, spi, position_source)
 ```
 
-As you might noticed, we also created delete() function which filters the data and deletes all flights where callsign (flight number) is empty and there *on_ground = True* (which means that flight is either finished or haven't started yet). We will use it for **cron job**.
+As you might notice, we also created delete() function which filters the data and deletes all flights where callsign (flight number) is empty and there *on_ground = True* (which means that flight is either finished or haven't started yet). We will use it for **cron job**.
 
 # Step 3 - Job Scheduling
 
-Our goal was to visualize all flight in real time. We failed due to database low capasity, obviously. Nevertheless, we ran cron job for over 10 hours to get as much data as possible and demonstrate the whole concept.
+Our goal was to visualize all flight in real time. We failed due to database low capacity, obviously. Nevertheless, we ran cron job for over 10 hours to get as much data as possible and demonstrate the whole concept.
 
 *Why do we need cron jobs?*
 
-This is really nice tool to schedule some jobs, for example to update DWH every 2 hours or to filter the data (as we did).
+This is a really nice tool to schedule some jobs, for example, to update DWH every 2 hours or to filter the data (as we did).
 
-We tries two different tools: **Pentaho Data Integration** and **Apache Airflow**.
+We tried two different tools: **Pentaho Data Integration** and **Apache Airflow**.
 
-With the first one we already were familliar, another one is absolutely new, that's why we wanted to use Airflow instead of Pentaho.
+With the first one we already were familiar, another one is absolutely new, that's why we wanted to use Airflow instead of Pentaho.
 
-Pentaho does it really smoothly, we only had to create transformation (but basically it's one Python script with all code above) and create the job with scheduler in it. And it's done, runnign every 20 minutes.
+Pentaho does it really smoothly, we only had to create transformation (but basically it's one Python script with all code above) and create the job with the scheduler in it. And it's done, running every 20 minutes.
 
 The big disadvantage of Pentaho - is that it's not possible to run it on background on directly on the server. It's local solutions, which is also fine for some cases.
 
-In the meantime, Apache Airflow may be connected to the server and run all jobs on the backgroud no matter what. Really useful tool, especialy when you have to run jobs every X hours/minutes and import data from production database to DWH, and from DWH to another DWH.
+In the meantime, Apache Airflow may be connected to the server and run all jobs on the background no matter what. A really useful tool, especially when you have to run jobs every X hours/minutes and import data from the production database to DWH, and from DWH to another DWH.
 
 
 # Step 4 - Data Visualization
 
 For visualizations we used Tableau.
-Since we have in total 3 different tables, we had to aggregate the data first, join them all and visualize in the nice way.
+Since we have in total 3 different tables, we had to aggregate the data first, join them all and visualize in a nice way.
 
-For data preparation we tried Tableau Prep, it has embedded functions, somehow similar to SQL, which is useful for aggregation. We needed to join flights table with airline codes data, but in flights table we have only flight number and not the *icao* (airline code), so we used *LEFT* function in Tableau Prep to join these tables. 
+For data preparation we tried Tableau Prep, it has embedded functions, somehow similar to SQL, which is useful for aggregation. We needed to join flights table with airline codes data, but in flights table, we have only flight number and not the *icao* (airline code), so we used *LEFT* function in Tableau Prep to join these tables. 
 
-Additionaly, we wanted to add information about crashes, so we calculated number of crashes per airline and join all it together.
+Additionally, we wanted to add information about crashes, so we calculated a number of crashes per airline and join all it together.
 
 Another way to aggregate data was **Custom SQL** in Tableau Desktop with is easier and faster. So we wrote the simple query and ran in Tableau.
 
 ```
 with crashes as (
 select 
-	operator
-	,count(distinct id) as nr_crashes
+    operator
+    ,count(distinct id) as nr_crashes
 from airline_crashes
 group by 1
 order by 2 DESC
 )
 , codes as (
 select 
-	f.id
-	, f.callsign
-	, f.longitude
-	, f.latitude
-	, f.geo_altitude
-	, f.origin_country
-	, ac.icao
-	, ac.airline
-	, ac.country
+    f.id
+    , f.callsign
+    , f.longitude
+    , f.latitude
+    , f.geo_altitude
+    , f.origin_country
+    , ac.icao
+    , ac.airline
+    , ac.country
 from flights_all f
 inner join airline_codes ac on substring(f.callsign, 1, 3) ilike ac.icao
 )
 select 
-	id
-	,callsign
-	,longitude
-	,latitude
-	,geo_altitude
-	,icao
-	,origin_country
-	,airline
-	,country
-	,nr_crashes
+    id
+    ,callsign
+    ,longitude
+    ,latitude
+    ,geo_altitude
+    ,icao
+    ,origin_country
+    ,airline
+    ,country
+    ,nr_crashes
 from codes c
 left join crashes cr  on c.airline ilike cr.operator
 ```
 
-As an output we have one table which needs to be visualized. It saves a lot of time on aggregation and preparation part.
+As an output, we have one table which needs to be visualized. It saves a lot of time on aggregation and preparation part.
 
 The whole visualization you can find [here]()
