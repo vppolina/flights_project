@@ -310,6 +310,10 @@ select
 from codes c
 left join crashes cr  on c.airline ilike cr.operator
 ```
+
+The whole visualization you can find [here]()
+
+
 # Airline Crash Data Analysis
 
 First of all, we stored data in Hadoop HDFS. Then, we read csv file and assigned to spark dataframe.
@@ -366,4 +370,4 @@ At the end, we illustrated wordclouds for countries and reasons of crashes.
 
 As an output, we have one table which needs to be visualized. It saves a lot of time on aggregation and preparation part.
 
-The whole visualization you can find [here]()
+
