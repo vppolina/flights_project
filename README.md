@@ -243,7 +243,7 @@ def insert(data):
 
 As you might noticed, we also created delete() function which filters the data and deletes all flights where callsign (flight number) is empty and there *on_ground = True* (which means that flight is either finished or haven't started yet). We will use it for **cron job**.
 
-# Job Scheduling
+# Step 3 - Job Scheduling
 
 Our goal was to visualize all flight in real time. We failed due to database low capasity, obviously. Nevertheless, we ran cron job for over 10 hours to get as much data as possible and demonstrate the whole concept.
 
@@ -260,3 +260,57 @@ Pentaho does it really smoothly, we only had to create transformation (but basic
 The big disadvantage of Pentaho - is that it's not possible to run it on background on directly on the server. It's local solutions, which is also fine for some cases.
 
 In the meantime, Apache Airflow may be connected to the server and run all jobs on the backgroud no matter what. Really useful tool, especialy when you have to run jobs every X hours/minutes and import data from production database to DWH, and from DWH to another DWH.
+
+
+# Step 4 - Data Visualization
+
+For visualizations we used Tableau.
+Since we have in total 3 different tables, we had to aggregate the data first, join them all and visualize in the nice way.
+
+For data preparation we tried Tableau Prep, it has embedded functions, somehow similar to SQL, which is useful for aggregation. We needed to join flights table with airline codes data, but in flights table we have only flight number and not the *icao* (airline code), so we used *LEFT* function in Tableau Prep to join these tables. 
+
+Additionaly, we wanted to add information about crashes, so we calculated number of crashes per airline and join all it together.
+
+Another way to aggregate data was **Custom SQL** in Tableau Desktop with is easier and faster. So we wrote the simple query and ran in Tableau.
+
+```
+with crashes as (
+select 
+	operator
+	,count(distinct id) as nr_crashes
+from airline_crashes
+group by 1
+order by 2 DESC
+)
+, codes as (
+select 
+	f.id
+	, f.callsign
+	, f.longitude
+	, f.latitude
+	, f.geo_altitude
+	, f.origin_country
+	, ac.icao
+	, ac.airline
+	, ac.country
+from flights_all f
+inner join airline_codes ac on substring(f.callsign, 1, 3) ilike ac.icao
+)
+select 
+	id
+	,callsign
+	,longitude
+	,latitude
+	,geo_altitude
+	,icao
+	,origin_country
+	,airline
+	,country
+	,nr_crashes
+from codes c
+left join crashes cr  on c.airline ilike cr.operator
+```
+
+As an output we have one table which needs to be visualized. It saves a lot of time on aggregation and preparation part.
+
+The whole visualization you can find [here]()
