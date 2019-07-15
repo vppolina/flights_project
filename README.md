@@ -322,9 +322,34 @@ sc.textFile("airplane_hdfs/country.txt").flatMap(lambda line:line.split("\n")).m
 To make analysis of Summary column to understand the reason of the crashes, we continue with Python.
 By python we defined number of crashes by year, month. Also, we could show the Fatalities ration by year, And
 number of people who were on the board and survived people, in addition, top-10 operators and aircrafts.
+The visualizations are made by Tableau and Python(matplotlib, seaborn).
+```
+Fatalities = dataset.groupby(dataset.year).sum()
+
+Fatalities['Proportion'] = Fatalities['Fatalities'] / Fatalities['Aboard']
+
+plt.figure(figsize=(15,6))
+plt.subplot(1, 2, 1)
+plt.fill_between(Fatalities.index, 'Aboard', data=Fatalities, color="skyblue", alpha=0.2)
+plt.plot(Fatalities.index, 'Aboard', data=Fatalities, marker = ".", color="Slateblue", alpha=0.6, linewidth=1)
+plt.fill_between(Fatalities.index, 'Fatalities', data=Fatalities, color="olive", alpha=0.2)
+plt.plot(Fatalities.index, 'Fatalities', data=Fatalities, color="olive", marker = ".", alpha=0.6, linewidth=1)
+plt.legend(fontsize=10)
+plt.xlabel('Year', fontsize=10)
+plt.ylabel('Amount of people', fontsize=10)
+plt.title('Total number of people involved by Year', loc='Center', fontsize=14)
+
+plt.subplot(1, 2, 2)
+plt.plot(Fatalities.index, 'Proportion', data=Fatalities, marker = ".", color = 'red', linewidth=1)
+plt.xlabel('Year', fontsize=10)
+plt.ylabel('Ratio', fontsize=10)
+plt.title('Fatalities / Total Ratio by Year', loc='Center', fontsize=14)
+plt.tight_layout()
+plt.show()
+```
 For Summary column, we decided to use text analytics method, topic modelling.
 Before fitting modelling, we did text precossing: stopwords, lemmatization. Then, we constructed term
-document frequency matrix for LDA modelling. 
+document frequency matrix for LDA modelling.
 ```
 # Build LDA model
 lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,
@@ -337,6 +362,7 @@ lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,
                                            alpha='auto',
                                            per_word_topics=True)
 ```
+At the end, we illustrated wordclouds for countries and reasons of crashes.
 
 As an output, we have one table which needs to be visualized. It saves a lot of time on aggregation and preparation part.
 
