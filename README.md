@@ -1,4 +1,4 @@
-## Retrieving and Visualizing Real-time data from API 
+## Retrieving and Visualizing Real-time data from API
 HWR Berlin
 Enterprise Architectures for Big Data
 
@@ -26,11 +26,11 @@ However, during the project we stack with several issues:
 
 So this solution is nice for small projects with little data but too expensive for production.
 
-# Data sources 
+# Data sources
 
 * [**Open Sky Network**](https://opensky-network.org/apidoc/rest.html#all-state-vectors)
 
-Open source data source with real-time flights data. You can retrieve data using either REST API, Python API or Java API. 
+Open source data source with real-time flights data. You can retrieve data using either REST API, Python API or Java API.
 After some trying, we decided to use REST API, it's easier to retrieve data and filter it right away.
 
 * [**Airplane-Crashes-and-Fatalities**](https://opendata.socrata.com/Government/Airplane-Crashes-and-Fatalities-Since-1908/q2te-8cvq)
@@ -110,27 +110,27 @@ We already prepared .csv files, so we can just run a small python code and inser
 ```
 #predefined functions to insert the data
 def airline_codes(icao, airline, callsign, country):
-    
+
     con = psycopg2.connect(database="postgres", user="polina@opensky", password="Bigdata2019", host="opensky.postgres.database.azure.com", port="5432")
     cursor = con.cursor()
     query = "INSERT INTO airline_codes (icao, airline, callsign, country) VALUES (%s, %s, %s, %s)"
     cursor.execute(query, (icao, airline, callsign, country))
     con.commit()
-    
+
     cursor.close()
     con.close()
     return
-    
+
 #saving data to the Data Frame
 data = pd.read_csv("airport_codes.csv", sep=';')
 
-#iterating through data 
+#iterating through data
 for index, row in data.iterrows():
     icao = row[0]
     airline = row[1]
     callsign = row[2]
     country = row[3]
-    
+
     airline_codes(icao, airline, callsign, country)
 ```
 
@@ -142,26 +142,26 @@ That's why we aggregated data a bit and inserted into DB after this.
 ```
 #predefined functions to insert the data
 def airline_crashes(operator, place, country):
-    
+
     con = psycopg2.connect(database="postgres", user="polina@opensky", password="Bigdata2019", host="opensky.postgres.database.azure.com", port="5432")
     cursor = con.cursor()
     query = "INSERT INTO airline_crashes (operator, place, country) VALUES (%s, %s, %s)"
     cursor.execute(query, (operator, place, country))
     con.commit()
-    
+
     cursor.close()
     con.close()
     return
-    
+
 crashes = pd.read_csv("airline_crashes.csv", sep=';')
 
 #splitting the Location column
 new = crashes.Location.str.split(", ",expand=True)
-crashes["Place"]= new[0] 
-crashes["Country"]= new[1] 
+crashes["Place"]= new[0]
+crashes["Country"]= new[1]
 
 #deleting existing Location column
-crashes.drop(columns =["Location"], inplace = True) 
+crashes.drop(columns =["Location"], inplace = True)
 
 #replacing missing values
 crashes.replace('NaN', None)
@@ -171,14 +171,14 @@ for index, row in crashes.iterrows():
     operator = row[0]
     place = row[1]
     country = row[2]
-    
+
     airline_crashes(operator, place, country)
 
 ```
 
 **Retrieve data from API**
 
-Second, we finally have to retrieve the data from the API. 
+Second, we finally have to retrieve the data from the API.
 So we simply get the request from API and assign into the variable.
 Since this .json file contains other data but flight states, we need to store only "states" data.
 
@@ -192,29 +192,29 @@ Now we can just iterate through this data and store everything into DB.
 
 ```
 def connect(icao24, callsign, origin_country, time_position, last_contact, longitude, latitude, baro_altitude, on_ground, velocity, true_track, vertical_rate, sensors, geo_altitude, squawk, spi, position_source):
-    
+
     con = psycopg2.connect(database="postgres", user="polina@opensky", password="Bigdata2019", host="opensky.postgres.database.azure.com", port="5432")
     cursor = con.cursor()
     query = "INSERT INTO flights_all (icao24, callsign, origin_country, time_position, last_contact, longitude, latitude, baro_altitude, on_ground, velocity, true_track, vertical_rate, sensors, geo_altitude, squawk, spi, position_source, retrieved_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, current_timestamp)"
     cursor.execute(query, (icao24, callsign, origin_country, time_position, last_contact, longitude, latitude, baro_altitude, on_ground, velocity, true_track, vertical_rate, sensors, geo_altitude, squawk, spi, position_source))
     con.commit()
-    
+
     cursor.close()
     con.close()
     return
-    
-    
+
+
 def delete():
     con = psycopg2.connect(database="postgres", user="polina@opensky", password="Bigdata2019", host="opensky.postgres.database.azure.com", port="5432")
     cursor = con.cursor()
     query2 = "with flights as (select callsign from states where on_ground = true) delete from states where id in (select id from states s inner join flights f on f.callsign = s.callsign) or callsign ilike ''"
     cursor.execute(query2)
     con.commit()
-    
+
     cursor.close()
     con.close()
     return
-    
+
 def insert(data):
     for d in range(len(data)):
         if (data[d][2] == 'Germany' or data[d][2] == 'Ukraine' or data[d][2] == 'Moldova' or data[d][2] == 'Kazakhstan'):
@@ -267,7 +267,7 @@ In the meantime, Apache Airflow may be connected to the server and run all jobs 
 For visualizations we used Tableau.
 Since we have in total 3 different tables, we had to aggregate the data first, join them all and visualize in a nice way.
 
-For data preparation we tried Tableau Prep, it has embedded functions, somehow similar to SQL, which is useful for aggregation. We needed to join flights table with airline codes data, but in flights table, we have only flight number and not the *icao* (airline code), so we used *LEFT* function in Tableau Prep to join these tables. 
+For data preparation we tried Tableau Prep, it has embedded functions, somehow similar to SQL, which is useful for aggregation. We needed to join flights table with airline codes data, but in flights table, we have only flight number and not the *icao* (airline code), so we used *LEFT* function in Tableau Prep to join these tables.
 
 Additionally, we wanted to add information about crashes, so we calculated a number of crashes per airline and join all it together.
 
@@ -275,7 +275,7 @@ Another way to aggregate data was **Custom SQL** in Tableau Desktop with is easi
 
 ```
 with crashes as (
-select 
+select
     operator
     ,count(distinct id) as nr_crashes
 from airline_crashes
@@ -283,7 +283,7 @@ group by 1
 order by 2 DESC
 )
 , codes as (
-select 
+select
     f.id
     , f.callsign
     , f.longitude
@@ -296,7 +296,7 @@ select
 from flights_all f
 inner join airline_codes ac on substring(f.callsign, 1, 3) ilike ac.icao
 )
-select 
+select
     id
     ,callsign
     ,longitude
@@ -309,6 +309,33 @@ select
     ,nr_crashes
 from codes c
 left join crashes cr  on c.airline ilike cr.operator
+```
+# Airline Crash Data Analysis
+
+First of all, we stored data in Hadoop HDFS. Then, we read csv file and assigned to spark dataframe.
+It is seen that location column has values of City/State and Country seperated by ',', therefore to define
+the Country we seperated the column and created new column 'Country'. Furthermore to perform MapReduce job
+we made RDD of country. Below we are showing all functions that we used to make MapReduce with chain.
+```
+sc.textFile("airplane_hdfs/country.txt").flatMap(lambda line:line.split("\n")).map(lambda word: (word,1)).reduceByKey(lambda x,y:x+y).map(lambda (x,y): (y,x)).sortByKey(ascending=False).take(50)
+```
+To make analysis of Summary column to understand the reason of the crashes, we continue with Python.
+By python we defined number of crashes by year, month. Also, we could show the Fatalities ration by year, And
+number of people who were on the board and survived people, in addition, top-10 operators and aircrafts.
+For Summary column, we decided to use text analytics method, topic modelling.
+Before fitting modelling, we did text precossing: stopwords, lemmatization. Then, we constructed term
+document frequency matrix for LDA modelling. 
+```
+# Build LDA model
+lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,
+                                           id2word=id2word,
+                                           num_topics=20,
+                                           random_state=100,
+                                           update_every=1,
+                                           chunksize=100,
+                                           passes=10,
+                                           alpha='auto',
+                                           per_word_topics=True)
 ```
 
 As an output, we have one table which needs to be visualized. It saves a lot of time on aggregation and preparation part.
