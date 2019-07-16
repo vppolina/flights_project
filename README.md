@@ -2,9 +2,7 @@
 HWR Berlin
 Enterprise Architectures for Big Data
 
-Polina Voroshylova
-Ana Maria Cuciuc
-Tarazali Ryskul
+Polina Voroshylova, Ana Maria Cuciuc, Tarazali Ryskul
 
 # Project Scope
 
