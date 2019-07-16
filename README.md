@@ -1,5 +1,6 @@
 ## Retrieving and Visualizing Real-time data from API
 HWR Berlin
+
 Enterprise Architectures for Big Data
 
 Polina Voroshylova, Ana Maria Cuciuc, Tarazali Ryskul
