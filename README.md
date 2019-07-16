@@ -1,10 +1,9 @@
 ## Retrieving and Visualizing Real-time data from API
 HWR Berlin
+
 Enterprise Architectures for Big Data
 
-Polina Voroshylova
-Ana Maria Cuciuc
-Tarazali Ryskul
+Polina Voroshylova, Ana Maria Cuciuc, Tarazali Ryskul
 
 # Project Scope
 
@@ -310,6 +309,10 @@ select
 from codes c
 left join crashes cr  on c.airline ilike cr.operator
 ```
+
+The whole visualization you can find [here](https://eu-west-1a.online.tableau.com/t/tableauprojects/views/big_data_presentation_final/Dashboard1/anamaria.cuciuc@gmail.com/real_time_flights?iframeSizedToWindow=true&:embed=y&:showAppBanner=false&:display_count=no&:showVizHome=no&:origin=viz_share_link)
+
+
 # Airline Crash Data Analysis
 
 First of all, we stored data in Hadoop HDFS. Then, we read csv file and assigned to spark dataframe.
@@ -366,4 +369,4 @@ At the end, we illustrated wordclouds for countries and reasons of crashes.
 
 As an output, we have one table which needs to be visualized. It saves a lot of time on aggregation and preparation part.
 
-The whole visualization you can find [here]()
+
