@@ -1,0 +1,1 @@
+sc.textFile("airplane_hdfs/country.txt").flatMap(lambda line:line.split("\n")).map(lambda word: (word,1)).reduceByKey(lambda x,y:x+y).map(lambda (x,y): (y,x)).sortByKey(ascending=False).take(50)
