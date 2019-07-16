@@ -311,7 +311,7 @@ from codes c
 left join crashes cr  on c.airline ilike cr.operator
 ```
 
-The whole visualization you can find [here]()
+The whole visualization you can find [here](https://eu-west-1a.online.tableau.com/t/tableauprojects/views/big_data_presentation_final/Dashboard1/anamaria.cuciuc@gmail.com/real_time_flights?iframeSizedToWindow=true&:embed=y&:showAppBanner=false&:display_count=no&:showVizHome=no&:origin=viz_share_link)
 
 
 # Airline Crash Data Analysis
